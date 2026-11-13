@@ -57,7 +57,6 @@
       border: 1px solid #cfe6cf;
     }
     .slot.taken { background: #f6f6f6; border-color: #e2e2e2; }
-    .slot.mine { background: #eef0ff; border-color: #c5cbf5; }
     .slot.past { opacity: .5; }
     .slot-title { font-weight: 600; }
     .slot-info { font-size: .95em; color: #444; margin-top: 2px; word-break: break-word; }
@@ -182,20 +181,10 @@
       SLOTS.push({ id: `${day}-${m.key}`, day, meal: m, deadline: new Date(`${day}T${m.hour}:00+01:00`) });
     }));
 
-    const TOKENS_KEY = 'repasMF.tokens'; // slot id -> edit token, kept on this phone only
     let meals = {};   // slot id -> { name, dish }
     let current = null; // { slot, mode: 'new' | 'edit' }
 
     const $ = id => document.getElementById(id);
-
-    function getTokens() {
-      try { return JSON.parse(localStorage.getItem(TOKENS_KEY)) || {}; } catch { return {}; }
-    }
-    function setToken(slot, token) {
-      const t = getTokens();
-      if (token) t[slot] = token; else delete t[slot];
-      localStorage.setItem(TOKENS_KEY, JSON.stringify(t));
-    }
 
     async function rpc(fn, body) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
@@ -217,7 +206,7 @@
       switch (err.code) {
         case 'taken': return 'Oups, quelqu\'un vient de prendre ce repas. Choisis-en un autre.';
         case 'past': return 'Ce repas est déjà passé.';
-        case 'forbidden': return 'Tu ne peux modifier que tes propres inscriptions (depuis le même téléphone).';
+        case 'not_found': return 'Cette inscription a été annulée entre-temps.';
         default: return 'Problème de connexion. Réessaie dans un instant.';
       }
     }
@@ -227,8 +216,6 @@
         const rows = await rpc('get_meals');
         meals = {};
         rows.forEach(r => { meals[r.slot] = { name: r.name, dish: r.dish }; });
-        // Forget tokens of bookings that no longer exist.
-        Object.keys(getTokens()).forEach(s => { if (!meals[s]) setToken(s, null); });
         $('status').textContent = '';
         render();
       } catch (e) {
@@ -244,7 +231,6 @@
     }
 
     function render() {
-      const tokens = getTokens();
       const now = new Date();
       const free = SLOTS.filter(s => !meals[s.id] && s.deadline > now).length;
       $('status').textContent = free === 0 ? 'Tous les repas sont pris. Merci à tous !' : `${free} repas encore libre${free > 1 ? 's' : ''}.`;
@@ -258,14 +244,13 @@
 
         SLOTS.filter(s => s.day === day).forEach(s => {
           const booking = meals[s.id];
-          const mine = booking && tokens[s.id];
           const past = s.deadline <= now;
-          const card = el('div', 'slot' + (booking ? ' taken' : '') + (mine ? ' mine' : '') + (past ? ' past' : ''));
+          const card = el('div', 'slot' + (booking ? ' taken' : '') + (past ? ' past' : ''));
 
           const info = el('div');
           info.appendChild(el('div', 'slot-title', `${s.meal.label} (${s.meal.hint})`));
           if (booking) {
-            info.appendChild(el('div', 'slot-info', `✅ ${booking.name}${booking.dish ? ' — ' + booking.dish : ''}${mine ? ' (toi)' : ''}`));
+            info.appendChild(el('div', 'slot-info', `✅ ${booking.name}${booking.dish ? ' — ' + booking.dish : ''}`));
           } else {
             info.appendChild(el('div', 'slot-info', past ? 'Passé' : 'Libre'));
           }
@@ -277,7 +262,8 @@
             b.type = 'button';
             b.onclick = () => openModal(s, 'new');
             actions.appendChild(b);
-          } else if (mine && !past) {
+          } else if (booking) {
+            // Anyone can edit or cancel any booking, at any time (family trust, agreed with the organiser).
             const edit = el('button', 'btn btn-secondary', 'Modifier');
             edit.type = 'button';
             edit.onclick = () => openModal(s, 'edit');
@@ -300,7 +286,7 @@
 
     function openModal(slot, mode) {
       current = { slot, mode };
-      $('modalTitle').textContent = mode === 'new' ? 'Je m\'occupe de ce repas' : 'Modifier mon inscription';
+      $('modalTitle').textContent = mode === 'new' ? 'Je m\'occupe de ce repas' : 'Modifier l\'inscription';
       $('modalSub').textContent = `${slotLabel(slot)} (${slot.meal.hint})`;
       $('formError').hidden = true;
       const b = meals[slot.id];
@@ -336,10 +322,9 @@
       try {
         const id = current.slot.id;
         if (current.mode === 'new') {
-          const token = await rpc('book_meal', { p_slot: id, p_name: name, p_dish: dish });
-          setToken(id, token);
+          await rpc('book_meal', { p_slot: id, p_name: name, p_dish: dish });
         } else {
-          await rpc('update_meal', { p_slot: id, p_token: getTokens()[id], p_name: name, p_dish: dish });
+          await rpc('update_meal', { p_slot: id, p_token: null, p_name: name, p_dish: dish });
         }
         localStorage.setItem('repasMF.name', name);
         closeModal();
@@ -348,21 +333,22 @@
       } catch (err) {
         $('formError').textContent = errorMessage(err);
         $('formError').hidden = false;
-        if (err.code === 'taken') load();
+        if (err.code === 'taken' || err.code === 'not_found') load();
       } finally {
         btn.disabled = false;
       }
     });
 
     async function cancelBooking(slot, btn) {
-      if (!confirm(`Annuler ton inscription pour ${slotLabel(slot)} ?`)) return;
+      const b = meals[slot.id];
+      if (!confirm(`Annuler l'inscription de ${b ? b.name : '?'} pour ${slotLabel(slot)} ?`)) return;
       btn.disabled = true;
       try {
-        await rpc('cancel_meal', { p_slot: slot.id, p_token: getTokens()[slot.id] });
-        setToken(slot.id, null);
+        await rpc('cancel_meal', { p_slot: slot.id, p_token: null });
         await load();
       } catch (err) {
         alert(errorMessage(err));
+        if (err.code === 'not_found') load();
         btn.disabled = false;
       }
     }
