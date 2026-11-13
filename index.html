@@ -41,6 +41,7 @@
       border-radius: 6px;
     }
     .share { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 16px 8px; }
+    .share[hidden] { display: none; }
     .day { padding: 8px 16px; border-top: 1px solid #ececec; }
     .day h2 { font-size: 1.1em; margin: 10px 0; }
     .day h2::first-letter { text-transform: uppercase; }
@@ -129,7 +130,7 @@
       Merci beaucoup pour ton soutien !
     </div>
 
-    <div class="share">
+    <div class="share" id="share" hidden>
       <button class="btn btn-whatsapp" id="btnWhatsapp" type="button">Partager sur WhatsApp</button>
       <button class="btn btn-secondary" id="btnCopy" type="button">Copier le lien</button>
     </div>
@@ -370,6 +371,11 @@
     $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+    // Share buttons are only shown to the organiser, who opens the page with ?admin.
+    // Not a security barrier: the shared link itself is public anyway.
+    if (new URLSearchParams(location.search).has('admin')) $('share').hidden = false;
+
+    // Shared URL drops ?admin, so participants never get the organiser view.
     const pageUrl = location.href.split('#')[0].split('?')[0];
     $('btnWhatsapp').onclick = () => {
       const msg = `Repas pour Michel et Françoise, du lundi 16 au soir au dimanche 22 novembre. Inscris-toi ici : ${pageUrl}`;
