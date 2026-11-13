@@ -1,1 +1,392 @@
-<H1>hello!</H1>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Repas pour Michel et Françoise</title>
+  <meta property="og:title" content="Repas pour Michel et Françoise">
+  <meta property="og:description" content="Du lundi 16 au soir au dimanche 22 novembre : inscrivez-vous pour un repas.">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 16px;
+      color: #222;
+      font-size: 17px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .header {
+      padding: 20px;
+      background: linear-gradient(45deg,#4f5bd5,#764ba2);
+      color: #fff;
+      text-align: center;
+    }
+    .header h1 { margin: 0 0 8px; font-size: 1.5em; }
+    .header p { margin: 6px 0; }
+    .warning {
+      margin: 16px;
+      padding: 12px 14px;
+      background: #fff4e5;
+      border-left: 5px solid #e67e22;
+      border-radius: 6px;
+    }
+    .share { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 16px 8px; }
+    .day { padding: 8px 16px; border-top: 1px solid #ececec; }
+    .day h2 { font-size: 1.1em; margin: 10px 0; }
+    .day h2::first-letter { text-transform: uppercase; }
+    .slot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      background: #eef7ee;
+      border: 1px solid #cfe6cf;
+    }
+    .slot.taken { background: #f6f6f6; border-color: #e2e2e2; }
+    .slot.mine { background: #eef0ff; border-color: #c5cbf5; }
+    .slot.past { opacity: .5; }
+    .slot-title { font-weight: 600; }
+    .slot-info { font-size: .95em; color: #444; margin-top: 2px; word-break: break-word; }
+    .slot-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn {
+      min-height: 44px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    .btn-primary { background: linear-gradient(45deg,#4f5bd5,#764ba2); color: #fff; }
+    .btn-secondary { background: #e9e9e9; color: #222; }
+    .btn-danger { background: #fde8e8; color: #a31515; }
+    .btn-whatsapp { background: #1f8f4e; color: #fff; }
+    .btn:disabled { opacity: .6; cursor: wait; }
+    .status { margin: 16px; text-align: center; color: #666; }
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .modal-content h2 { margin: 0 0 4px; font-size: 1.2em; }
+    .modal-content .sub { margin: 0 0 14px; color: #555; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      font-size: 1em;
+      font-family: inherit;
+    }
+    .form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .error { color: #a31515; margin: 0 0 10px; }
+    .planned { font-size: .9em; background: #f6f6f6; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; max-height: 160px; overflow-y: auto; }
+    .planned ul { margin: 6px 0 0; padding-left: 18px; }
+    @media (max-width: 480px) {
+      .slot { flex-direction: column; align-items: stretch; }
+      .slot-actions { justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🍲 Repas pour Michel et Françoise</h1>
+      <p>Du lundi 16 novembre au soir au dimanche 22 novembre au soir.</p>
+      <p>Choisissez un repas libre et cliquez sur « Je m'en occupe ».<br>
+         Repas de midi à déposer <strong>avant 12h</strong>, repas du soir <strong>avant 18h</strong>.</p>
+    </div>
+
+    <div class="warning" role="note">
+      <strong>⚠️ Important :</strong> dans les plats, il ne faut <strong>pas de curry, curcuma,
+      pamplemousse, millepertuis, ni d'ail</strong>. Merci beaucoup pour votre soutien !
+    </div>
+
+    <div class="share">
+      <button class="btn btn-whatsapp" id="btnWhatsapp" type="button">Partager sur WhatsApp</button>
+      <button class="btn btn-secondary" id="btnCopy" type="button">Copier le lien</button>
+    </div>
+
+    <p class="status" id="status" aria-live="polite">Chargement…</p>
+    <div id="days"></div>
+  </div>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <h2 id="modalTitle"></h2>
+      <p class="sub" id="modalSub"></p>
+      <p class="error" id="formError" role="alert" hidden></p>
+      <form id="form">
+        <div class="form-group">
+          <label for="inpName">Prénom et nom *</label>
+          <input type="text" id="inpName" maxlength="80" required autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label for="inpDish">Le plat que vous apportez *</label>
+          <textarea id="inpDish" rows="3" maxlength="300" required placeholder="Ex. : soupe de légumes et compote"></textarea>
+        </div>
+        <div class="planned" id="planned" hidden>
+          <strong>Déjà prévu par les autres (pour varier) :</strong>
+          <ul id="plannedList"></ul>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btnClose">Fermer</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmit">Je confirme</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Supabase project (publishable key is public by design; access is limited to the SQL functions).
+    const SUPABASE_URL = 'https://keplcuyjlnskwvxwefau.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_jztF5alIVBxVcYY2PIzyVQ_DefbxWex';
+
+    // Nov 2026 is CET (+01:00) for the whole period: no DST change.
+    const DAYS = ['2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20','2026-11-21','2026-11-22'];
+    const MEALS = [
+      { key: 'midi', label: 'Midi', hint: 'à déposer avant 12h', hour: '12:00' },
+      { key: 'soir', label: 'Soir', hint: 'à déposer avant 18h', hour: '18:00' },
+    ];
+    const SLOTS = [];
+    DAYS.forEach(day => MEALS.forEach(m => {
+      if (day === '2026-11-16' && m.key === 'midi') return; // starts Monday evening
+      SLOTS.push({ id: `${day}-${m.key}`, day, meal: m, deadline: new Date(`${day}T${m.hour}:00+01:00`) });
+    }));
+
+    const TOKENS_KEY = 'repasMF.tokens'; // slot id -> edit token, kept on this phone only
+    let meals = {};   // slot id -> { name, dish }
+    let current = null; // { slot, mode: 'new' | 'edit' }
+
+    const $ = id => document.getElementById(id);
+
+    function getTokens() {
+      try { return JSON.parse(localStorage.getItem(TOKENS_KEY)) || {}; } catch { return {}; }
+    }
+    function setToken(slot, token) {
+      const t = getTokens();
+      if (token) t[slot] = token; else delete t[slot];
+      localStorage.setItem(TOKENS_KEY, JSON.stringify(t));
+    }
+
+    async function rpc(fn, body) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body || {}),
+      });
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : null;
+      if (!res.ok) {
+        const err = new Error((data && data.message) || 'error');
+        err.code = data && data.message;
+        throw err;
+      }
+      return data;
+    }
+
+    function errorMessage(err) {
+      switch (err.code) {
+        case 'taken': return 'Oups, quelqu\'un vient de prendre ce repas. Choisissez-en un autre.';
+        case 'past': return 'Ce repas est déjà passé.';
+        case 'forbidden': return 'Vous ne pouvez modifier que vos propres inscriptions (depuis le même téléphone).';
+        default: return 'Problème de connexion. Réessayez dans un instant.';
+      }
+    }
+
+    async function load() {
+      try {
+        const rows = await rpc('get_meals');
+        meals = {};
+        rows.forEach(r => { meals[r.slot] = { name: r.name, dish: r.dish }; });
+        // Forget tokens of bookings that no longer exist.
+        Object.keys(getTokens()).forEach(s => { if (!meals[s]) setToken(s, null); });
+        $('status').textContent = '';
+        render();
+      } catch (e) {
+        $('status').textContent = 'Impossible de charger le planning. Vérifiez votre connexion puis rechargez la page.';
+      }
+    }
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    function render() {
+      const tokens = getTokens();
+      const now = new Date();
+      const free = SLOTS.filter(s => !meals[s.id] && s.deadline > now).length;
+      $('status').textContent = free === 0 ? 'Tous les repas sont pris. Merci à tous !' : `${free} repas encore libre${free > 1 ? 's' : ''}.`;
+
+      const root = $('days');
+      root.innerHTML = '';
+      DAYS.forEach(day => {
+        const section = el('section', 'day');
+        const date = new Date(`${day}T12:00:00+01:00`);
+        section.appendChild(el('h2', '', date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })));
+
+        SLOTS.filter(s => s.day === day).forEach(s => {
+          const booking = meals[s.id];
+          const mine = booking && tokens[s.id];
+          const past = s.deadline <= now;
+          const card = el('div', 'slot' + (booking ? ' taken' : '') + (mine ? ' mine' : '') + (past ? ' past' : ''));
+
+          const info = el('div');
+          info.appendChild(el('div', 'slot-title', `${s.meal.label} (${s.meal.hint})`));
+          if (booking) {
+            info.appendChild(el('div', 'slot-info', `✅ ${booking.name}${booking.dish ? ' — ' + booking.dish : ''}${mine ? ' (vous)' : ''}`));
+          } else {
+            info.appendChild(el('div', 'slot-info', past ? 'Passé' : 'Libre'));
+          }
+          card.appendChild(info);
+
+          const actions = el('div', 'slot-actions');
+          if (!booking && !past) {
+            const b = el('button', 'btn btn-primary', 'Je m\'en occupe');
+            b.type = 'button';
+            b.onclick = () => openModal(s, 'new');
+            actions.appendChild(b);
+          } else if (mine && !past) {
+            const edit = el('button', 'btn btn-secondary', 'Modifier');
+            edit.type = 'button';
+            edit.onclick = () => openModal(s, 'edit');
+            const cancel = el('button', 'btn btn-danger', 'Annuler');
+            cancel.type = 'button';
+            cancel.onclick = () => cancelBooking(s, cancel);
+            actions.append(edit, cancel);
+          }
+          card.appendChild(actions);
+          section.appendChild(card);
+        });
+        root.appendChild(section);
+      });
+    }
+
+    function slotLabel(s) {
+      const d = new Date(`${s.day}T12:00:00+01:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' });
+      return `${s.meal.label} — ${d}`;
+    }
+
+    function openModal(slot, mode) {
+      current = { slot, mode };
+      $('modalTitle').textContent = mode === 'new' ? 'Je m\'occupe de ce repas' : 'Modifier mon inscription';
+      $('modalSub').textContent = `${slotLabel(slot)} (${slot.meal.hint})`;
+      $('formError').hidden = true;
+      const b = meals[slot.id];
+      $('inpName').value = mode === 'edit' && b ? b.name : (localStorage.getItem('repasMF.name') || '');
+      $('inpDish').value = mode === 'edit' && b ? b.dish : '';
+      const list = $('plannedList');
+      list.innerHTML = '';
+      SLOTS.filter(s => meals[s.id] && s.id !== slot.id).forEach(s => {
+        list.appendChild(el('li', '', `${slotLabel(s)} : ${meals[s.id].dish}`));
+      });
+      $('planned').hidden = list.children.length === 0;
+      $('modal').classList.add('open');
+      $('inpName').focus();
+    }
+
+    function closeModal() {
+      $('modal').classList.remove('open');
+      current = null;
+    }
+
+    $('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!current) return;
+      const name = $('inpName').value.trim();
+      const dish = $('inpDish').value.trim();
+      if (!name || !dish) {
+        $('formError').textContent = 'Merci d\'indiquer votre prénom et nom, et le plat.';
+        $('formError').hidden = false;
+        return;
+      }
+      const btn = $('btnSubmit');
+      btn.disabled = true;
+      try {
+        const id = current.slot.id;
+        if (current.mode === 'new') {
+          const token = await rpc('book_meal', { p_slot: id, p_name: name, p_dish: dish });
+          setToken(id, token);
+        } else {
+          await rpc('update_meal', { p_slot: id, p_token: getTokens()[id], p_name: name, p_dish: dish });
+        }
+        localStorage.setItem('repasMF.name', name);
+        closeModal();
+        await load();
+        $('status').textContent = `Merci ${name} ! C'est noté. ` + $('status').textContent;
+      } catch (err) {
+        $('formError').textContent = errorMessage(err);
+        $('formError').hidden = false;
+        if (err.code === 'taken') load();
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    async function cancelBooking(slot, btn) {
+      if (!confirm(`Annuler votre inscription pour ${slotLabel(slot)} ?`)) return;
+      btn.disabled = true;
+      try {
+        await rpc('cancel_meal', { p_slot: slot.id, p_token: getTokens()[slot.id] });
+        setToken(slot.id, null);
+        await load();
+      } catch (err) {
+        alert(errorMessage(err));
+        btn.disabled = false;
+      }
+    }
+
+    $('btnClose').onclick = closeModal;
+    $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    const pageUrl = location.href.split('#')[0].split('?')[0];
+    $('btnWhatsapp').onclick = () => {
+      const msg = `Repas pour Michel et Françoise, du lundi 16 au soir au dimanche 22 novembre. Inscrivez-vous ici : ${pageUrl}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    };
+    $('btnCopy').onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(pageUrl);
+        $('btnCopy').textContent = 'Lien copié ✓';
+      } catch {
+        prompt('Copiez ce lien :', pageUrl);
+      }
+    };
+
+    // Refresh when the page comes back to the foreground (e.g. after switching apps).
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && !current) load(); });
+
+    load();
+  </script>
+</body>
+</html>
