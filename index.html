@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Repas pour Michel et Françoise</title>
-  <meta property="og:title" content="Repas pour Michel et Françoise">
-  <meta property="og:description" content="Du lundi 16 au soir au dimanche 22 novembre : inscrivez-vous pour un repas.">
+  <title>Inscription des repas pour Michel et Françoise</title>
+  <meta property="og:title" content="Calendrier d'inscription des repas pour Michel et Françoise ❤️">
+  <meta property="og:description" content="Du lundi 16 au soir au dimanche 22 novembre : inscris-toi pour un repas.">
   <style>
     * { box-sizing: border-box; }
     body {
@@ -117,15 +117,16 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🍲 Repas pour Michel et Françoise</h1>
-      <p>Du lundi 16 novembre au soir au dimanche 22 novembre au soir.</p>
-      <p>Choisissez un repas libre et cliquez sur « Je m'en occupe ».<br>
+      <h1>Calendrier d'inscription des repas pour Michel et Françoise ❤️</h1>
+      <p>Merci de t'inscrire en cliquant sur une date en y indiquant le repas que tu fais.</p>
+      <p>Du lundi 16 novembre au soir au dimanche 22 novembre au soir.<br>
          Repas de midi à déposer <strong>avant 12h</strong>, repas du soir <strong>avant 18h</strong>.</p>
     </div>
 
     <div class="warning" role="note">
-      <strong>⚠️ Important :</strong> dans les plats, il ne faut <strong>pas de curry, curcuma,
-      pamplemousse, millepertuis, ni d'ail</strong>. Merci beaucoup pour votre soutien !
+      <strong>⚠️ Attention :</strong> dans les plats, il ne faut <strong>pas d'artichaut, d'ail ou de lentilles</strong>.
+      Si possible, mettre le nom sur les plats qui peuvent aller au micro-ondes, s'il te plaît.<br>
+      Merci beaucoup pour ton soutien !
     </div>
 
     <div class="share">
@@ -148,7 +149,7 @@
           <input type="text" id="inpName" maxlength="80" required autocomplete="name">
         </div>
         <div class="form-group">
-          <label for="inpDish">Le plat que vous apportez *</label>
+          <label for="inpDish">Le repas que tu fais *</label>
           <textarea id="inpDish" rows="3" maxlength="300" required placeholder="Ex. : soupe de légumes et compote"></textarea>
         </div>
         <div class="planned" id="planned" hidden>
@@ -213,10 +214,10 @@
 
     function errorMessage(err) {
       switch (err.code) {
-        case 'taken': return 'Oups, quelqu\'un vient de prendre ce repas. Choisissez-en un autre.';
+        case 'taken': return 'Oups, quelqu\'un vient de prendre ce repas. Choisis-en un autre.';
         case 'past': return 'Ce repas est déjà passé.';
-        case 'forbidden': return 'Vous ne pouvez modifier que vos propres inscriptions (depuis le même téléphone).';
-        default: return 'Problème de connexion. Réessayez dans un instant.';
+        case 'forbidden': return 'Tu ne peux modifier que tes propres inscriptions (depuis le même téléphone).';
+        default: return 'Problème de connexion. Réessaie dans un instant.';
       }
     }
 
@@ -230,7 +231,7 @@
         $('status').textContent = '';
         render();
       } catch (e) {
-        $('status').textContent = 'Impossible de charger le planning. Vérifiez votre connexion puis rechargez la page.';
+        $('status').textContent = 'Impossible de charger le planning. Vérifie ta connexion puis recharge la page.';
       }
     }
 
@@ -263,7 +264,7 @@
           const info = el('div');
           info.appendChild(el('div', 'slot-title', `${s.meal.label} (${s.meal.hint})`));
           if (booking) {
-            info.appendChild(el('div', 'slot-info', `✅ ${booking.name}${booking.dish ? ' — ' + booking.dish : ''}${mine ? ' (vous)' : ''}`));
+            info.appendChild(el('div', 'slot-info', `✅ ${booking.name}${booking.dish ? ' — ' + booking.dish : ''}${mine ? ' (toi)' : ''}`));
           } else {
             info.appendChild(el('div', 'slot-info', past ? 'Passé' : 'Libre'));
           }
@@ -325,7 +326,7 @@
       const name = $('inpName').value.trim();
       const dish = $('inpDish').value.trim();
       if (!name || !dish) {
-        $('formError').textContent = 'Merci d\'indiquer votre prénom et nom, et le plat.';
+        $('formError').textContent = 'Merci d\'indiquer ton prénom et nom, et le repas.';
         $('formError').hidden = false;
         return;
       }
@@ -353,7 +354,7 @@
     });
 
     async function cancelBooking(slot, btn) {
-      if (!confirm(`Annuler votre inscription pour ${slotLabel(slot)} ?`)) return;
+      if (!confirm(`Annuler ton inscription pour ${slotLabel(slot)} ?`)) return;
       btn.disabled = true;
       try {
         await rpc('cancel_meal', { p_slot: slot.id, p_token: getTokens()[slot.id] });
@@ -371,7 +372,7 @@
 
     const pageUrl = location.href.split('#')[0].split('?')[0];
     $('btnWhatsapp').onclick = () => {
-      const msg = `Repas pour Michel et Françoise, du lundi 16 au soir au dimanche 22 novembre. Inscrivez-vous ici : ${pageUrl}`;
+      const msg = `Repas pour Michel et Françoise, du lundi 16 au soir au dimanche 22 novembre. Inscris-toi ici : ${pageUrl}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
     };
     $('btnCopy').onclick = async () => {
@@ -379,7 +380,7 @@
         await navigator.clipboard.writeText(pageUrl);
         $('btnCopy').textContent = 'Lien copié ✓';
       } catch {
-        prompt('Copiez ce lien :', pageUrl);
+        prompt('Copie ce lien :', pageUrl);
       }
     };
 
