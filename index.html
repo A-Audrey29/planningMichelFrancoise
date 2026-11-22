@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <title>Inscription des repas pour Michel et Françoise</title>
   <meta property="og:title" content="Calendrier d'inscription des repas pour Michel et Françoise ❤️">
-  <meta property="og:description" content="Du lundi 16 au soir au dimanche 22 novembre : inscris-toi pour un repas.">
+  <meta property="og:description" content="Du lundi 23 au dimanche 29 novembre : inscris-toi pour un repas.">
   <style>
     * { box-sizing: border-box; }
     body {
@@ -45,6 +45,8 @@
     .day { padding: 8px 16px; border-top: 1px solid #ececec; }
     .day h2 { font-size: 1.1em; margin: 10px 0; }
     .day h2::first-letter { text-transform: uppercase; }
+    .archive { border-top: 1px solid #ececec; padding: 12px 16px; }
+    .archive summary { cursor: pointer; font-weight: 600; color: #555; padding: 6px 0; }
     .slot {
       display: flex;
       justify-content: space-between;
@@ -119,7 +121,7 @@
     <div class="header">
       <h1>Calendrier d'inscription des repas pour Michel et Françoise ❤️</h1>
       <p>Merci de t'inscrire en cliquant sur une date en y indiquant le repas que tu fais.</p>
-      <p>Du lundi 16 novembre au soir au dimanche 22 novembre au soir.<br>
+      <p>Du lundi 23 novembre midi au dimanche 29 novembre au soir.<br>
          Repas de midi à déposer <strong>avant 12h</strong>, repas du soir <strong>avant 18h</strong>.</p>
     </div>
 
@@ -170,7 +172,8 @@
     const SUPABASE_KEY = 'sb_publishable_jztF5alIVBxVcYY2PIzyVQ_DefbxWex';
 
     // Nov 2026 is CET (+01:00) for the whole period: no DST change.
-    const DAYS = ['2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20','2026-11-21','2026-11-22'];
+    const DAYS = ['2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20','2026-11-21','2026-11-22',
+                  '2026-11-23','2026-11-24','2026-11-25','2026-11-26','2026-11-27','2026-11-28','2026-11-29'];
     const MEALS = [
       { key: 'midi', label: 'Midi', hint: 'à déposer avant 12h', hour: '12:00' },
       { key: 'soir', label: 'Soir', hint: 'à déposer avant 18h', hour: '18:00' },
@@ -237,7 +240,11 @@
 
       const root = $('days');
       root.innerHTML = '';
+      // Days whose meals are all past go into a collapsed "archive" block at the bottom.
+      const archive = el('details', 'archive');
+      archive.appendChild(el('summary', '', 'Voir les repas déjà faits'));
       DAYS.forEach(day => {
+        const dayPast = SLOTS.filter(s => s.day === day).every(s => s.deadline <= now);
         const section = el('section', 'day');
         const date = new Date(`${day}T12:00:00+01:00`);
         section.appendChild(el('h2', '', date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })));
@@ -275,8 +282,9 @@
           card.appendChild(actions);
           section.appendChild(card);
         });
-        root.appendChild(section);
+        (dayPast ? archive : root).appendChild(section);
       });
+      if (archive.children.length > 1) root.appendChild(archive);
     }
 
     function slotLabel(s) {
@@ -364,7 +372,7 @@
     // Shared URL drops ?admin, so participants never get the organiser view.
     const pageUrl = location.href.split('#')[0].split('?')[0];
     $('btnWhatsapp').onclick = () => {
-      const msg = `Repas pour Michel et Françoise, du lundi 16 au soir au dimanche 22 novembre. Inscris-toi ici : ${pageUrl}`;
+      const msg = `Repas pour Michel et Françoise, du lundi 23 au dimanche 29 novembre. Inscris-toi ici : ${pageUrl}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
     };
     $('btnCopy').onclick = async () => {
