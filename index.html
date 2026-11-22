@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Inscription des repas pour Michel et Françoise</title>
-  <meta property="og:title" content="Calendrier d'inscription des repas pour Michel et Françoise ❤️">
+  <title>Inscription des repas pour Michel et sa famille</title>
+  <meta property="og:title" content="Calendrier d'inscription des repas pour Michel et sa famille ❤️">
   <meta property="og:description" content="Du lundi 23 au dimanche 29 novembre : inscris-toi pour un repas.">
   <style>
     * { box-sizing: border-box; }
@@ -119,10 +119,11 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>Calendrier d'inscription des repas pour Michel et Françoise ❤️</h1>
+      <h1>Calendrier d'inscription des repas pour Michel et sa famille ❤️</h1>
       <p>Merci de t'inscrire en cliquant sur une date en y indiquant le repas que tu fais.</p>
+      <p>Chaque repas est <strong>pour 6 personnes</strong>.</p>
       <p>Du lundi 23 novembre midi au dimanche 29 novembre au soir.<br>
-         Repas de midi à déposer <strong>avant 12h</strong>, repas du soir <strong>avant 18h</strong>.</p>
+         Repas de midi à déposer <strong>avant 12h</strong>, repas du soir <strong>avant 19h</strong>.</p>
     </div>
 
     <div class="warning" role="note">
@@ -176,7 +177,7 @@
                   '2026-11-23','2026-11-24','2026-11-25','2026-11-26','2026-11-27','2026-11-28','2026-11-29'];
     const MEALS = [
       { key: 'midi', label: 'Midi', hint: 'à déposer avant 12h', hour: '12:00' },
-      { key: 'soir', label: 'Soir', hint: 'à déposer avant 18h', hour: '18:00' },
+      { key: 'soir', label: 'Soir', hint: 'à déposer avant 19h', hour: '19:00' },
     ];
     const SLOTS = [];
     DAYS.forEach(day => MEALS.forEach(m => {
@@ -372,7 +373,7 @@
     // Shared URL drops ?admin, so participants never get the organiser view.
     const pageUrl = location.href.split('#')[0].split('?')[0];
     $('btnWhatsapp').onclick = () => {
-      const msg = `Repas pour Michel et Françoise, du lundi 23 au dimanche 29 novembre. Inscris-toi ici : ${pageUrl}`;
+      const msg = `Repas pour Michel et sa famille (6 personnes), du lundi 23 au dimanche 29 novembre. Inscris-toi ici : ${pageUrl}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
     };
     $('btnCopy').onclick = async () => {
